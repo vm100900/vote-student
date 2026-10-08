@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class Suggestions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    {"imports":{"@material/web/":"https://esm.run/@material/web/"}}
+  </script>
+  <script type="module">
+    import 'https://esm.run/@material/web/all.js';
+  </script>
+</head>
+<body>
+  <header class="top-app-bar">
+    <span class="app-title">Class Suggestions</span>
+  </header>
+  <div id="cookie-banner" class="cookie-banner" hidden>
+    <p>This site uses a cookie to remember your vote so you can't vote twice. No personal data is collected.</p>
+    <div class="cookie-actions">
+      <md-filled-button id="cookie-accept">Accept</md-filled-button>
+      <md-outlined-button id="cookie-decline">Decline</md-outlined-button>
+    </div>
+  </div>
+  <main>
+    <section id="pinned-section" hidden>
+      <h2 class="section-label">Pinned</h2>
+      <div id="pinned-list"></div>
+    </section>
+    <section>
+      <div id="suggestions-list"><p class="loading-msg">Loading suggestions…</p></div>
+    </section>
+  </main>
+  <md-fab id="add-fab" label="Add suggestion" extended>
+    <md-icon slot="icon">add</md-icon>
+  </md-fab>
+  <md-dialog id="submit-dialog">
+    <div slot="headline">New suggestion</div>
+    <form slot="content" id="submit-form" method="dialog">
+      <md-outlined-text-field id="title-field" label="Title" required maxlength="120" style="width:100%"></md-outlined-text-field>
+      <md-outlined-text-field id="desc-field" label="Description (optional)" type="textarea" rows="3" maxlength="500" style="width:100%;margin-top:16px"></md-outlined-text-field>
+    </form>
+    <div slot="actions">
+      <md-text-button id="cancel-btn">Cancel</md-text-button>
+      <md-filled-button id="submit-btn">Submit</md-filled-button>
+    </div>
+  </md-dialog>
+  <script src="js/config.js"></script>
+  <script src="js/github.js"></script>
+  <script src="js/voter.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

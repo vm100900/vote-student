@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Class Suggestions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    {"imports":{"@material/web/":"https://esm.run/@material/web/"}}
+  </script>
+  <script type="module">
+    import 'https://esm.run/@material/web/all.js';
+  </script>
+</head>
+<body>
+  <header class="top-app-bar">
+    <span class="app-title">Admin Panel</span>
+    <div class="voting-toggle-wrap">
+      <span class="toggle-label">Voting</span>
+      <md-switch id="voting-toggle"></md-switch>
+    </div>
+  </header>
+  <md-dialog id="auth-dialog" open>
+    <div slot="headline">Teacher login</div>
+    <form slot="content" id="auth-form" method="dialog">
+      <md-outlined-text-field id="password-field" label="Password" type="password" style="width:100%"></md-outlined-text-field>
+      <p id="auth-error" class="auth-error" hidden>Incorrect password</p>
+    </form>
+    <div slot="actions">
+      <md-filled-button id="login-btn">Log in</md-filled-button>
+    </div>
+  </md-dialog>
+  <main>
+    <section id="pinned-section" hidden>
+      <h2 class="section-label">Pinned</h2>
+      <div id="pinned-list"></div>
+    </section>
+    <section>
+      <div id="suggestions-list"><p class="loading-msg">Log in to view suggestions.</p></div>
+    </section>
+  </main>
+  <script src="js/config.js"></script>
+  <script src="js/github.js"></script>
+  <script src="js/voter.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
