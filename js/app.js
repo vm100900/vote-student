@@ -119,4 +119,85 @@
     });
   });
 
+  // ── Submit dialog ──
+  document.addEventListener('DOMContentLoaded', () => {
+    const fab = document.getElementById('add-fab');
+    const dialog = document.getElementById('submit-dialog');
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const titleField = document.getElementById('title-field');
+    const descField = document.getElementById('desc-field');
+
+    fab?.addEventListener('click', () => dialog.show());
+    cancelBtn?.addEventListener('click', () => dialog.close());
+
+    submitBtn?.addEventListener('click', async () => {
+      const title = titleField.value.trim();
+      if (!title) { titleField.focus(); return; }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting…';
+
+      try {
+        const issue = await GH.createIssue(title, descField.value.trim());
+        dialog.close();
+        titleField.value = '';
+        descField.value = '';
+
+        // Refresh issues + re-render
+        const [issues, { sha, content: votes }] = await Promise.all([
+          GH.fetchIssues(),
+          GH.fetchVotesFile(),
+        ]);
+        window._appState = { ...window._appState, issues, votes, voteSha: sha };
+        renderSuggestions(issues, votes, window._appState.voterHash);
+      } catch (err) {
+        console.error(err);
+        alert('Could not submit suggestion. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit';
+      }
+    });
+  });
+
+  // ── Vote handler (delegated to document) ──
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action="vote"]');
+    if (!btn) return;
+
+    const number = String(btn.dataset.number);
+    const { votes, voteSha, voterHash } = window._appState;
+
+    // Prevent double-click
+    btn.disabled = true;
+
+    try {
+      const { sha: freshSha, content: freshVotes } = await GH.fetchVotesFile();
+
+      const entry = freshVotes.issues[number] || { count: 0, voters: [] };
+      if (entry.voters.includes(voterHash)) {
+        // Already voted (race condition guard)
+        window._appState.votes = freshVotes;
+        window._appState.voteSha = freshSha;
+        renderSuggestions(window._appState.issues, freshVotes, voterHash);
+        return;
+      }
+
+      entry.count += 1;
+      entry.voters = [...entry.voters, voterHash];
+      freshVotes.issues[number] = entry;
+
+      await GH.updateVotesFile(freshVotes, freshSha);
+
+      window._appState.votes = freshVotes;
+      window._appState.voteSha = freshSha;
+      renderSuggestions(window._appState.issues, freshVotes, voterHash);
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      alert('Could not save vote. Please try again.');
+    }
+  });
+
 })();
