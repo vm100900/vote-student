@@ -111,16 +111,14 @@
     renderSuggestions(issues, votes, voterHash);
   }
 
+  // ── Submit dialog ──
   document.addEventListener('DOMContentLoaded', () => {
     init().catch(err => {
       document.getElementById('suggestions-list').innerHTML =
         `<p class="loading-msg">Could not load suggestions. Check your config.js setup.</p>`;
       console.error(err);
     });
-  });
 
-  // ── Submit dialog ──
-  document.addEventListener('DOMContentLoaded', () => {
     const fab = document.getElementById('add-fab');
     const dialog = document.getElementById('submit-dialog');
     const submitBtn = document.getElementById('submit-btn');
@@ -139,7 +137,7 @@
       submitBtn.textContent = 'Submitting…';
 
       try {
-        const issue = await GH.createIssue(title, descField.value.trim());
+        await GH.createIssue(title, descField.value.trim(), ['suggestion']);
         dialog.close();
         titleField.value = '';
         descField.value = '';

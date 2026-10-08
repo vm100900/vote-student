@@ -23,13 +23,13 @@
   }
 
   async function fetchIssues() {
-    return apiFetch(repoPath('/issues?state=open&per_page=100&labels='));
+    return apiFetch(repoPath('/issues?state=open&per_page=100&labels=suggestion'));
   }
 
-  async function createIssue(title, body) {
+  async function createIssue(title, body, labels = []) {
     return apiFetch(repoPath('/issues'), {
       method: 'POST',
-      body: JSON.stringify({ title, body: body || '' }),
+      body: JSON.stringify({ title, body: body || '', labels }),
     });
   }
 
@@ -55,7 +55,8 @@
 
   async function fetchVotesFile() {
     const data = await apiFetch(repoPath('/contents/data/votes.json'));
-    const content = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    const raw = atob(data.content.replace(/\n/g, ''));
+    const content = JSON.parse(decodeURIComponent(escape(raw)));
     return { sha: data.sha, content };
   }
 
