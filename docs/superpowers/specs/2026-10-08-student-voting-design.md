@@ -126,7 +126,7 @@ Standard browser fingerprinting (userAgent, screen size, timezone) is ineffectiv
   - 📌 Pin / Unpin — adds/removes `pinned` label on the Issue
   - ✓ Mark as Chosen / Unchosen — adds/removes `chosen` label
   - 🗑 Delete — closes the GitHub Issue (hidden from students)
-- **Change password** button — opens a dialog, teacher types new password, SHA-256 hash is displayed with the exact `config.js` line to copy-paste; the teacher then edits `js/config.js` via GitHub's web editor (no git install required) and saves
+- No password change UI — password changes are made by the site owner (developer) by updating the SHA-256 hash in `js/config.js` and pushing to GitHub. Teacher requests a change verbally; developer updates the config.
 
 ---
 
