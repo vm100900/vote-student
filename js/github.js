@@ -1,13 +1,8 @@
 (function () {
-  const BASE = 'https://api.github.com';
-
   async function apiFetch(path, options = {}) {
-    const res = await fetch(`${BASE}${path}`, {
+    const res = await fetch(`${CONFIG.workerUrl}${path}`, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${CONFIG.token}`,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
         'Content-Type': 'application/json',
         ...(options.headers || {}),
       },
