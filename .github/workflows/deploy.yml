@@ -23,9 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Inject worker URL
-        run: sed -i "s|__WORKER_URL__|${{ secrets.WORKER_URL }}|g" js/config.js
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
