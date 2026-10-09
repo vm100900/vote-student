@@ -2,6 +2,7 @@
   async function apiFetch(path, options = {}) {
     const res = await fetch(`${CONFIG.workerUrl}${path}`, {
       ...options,
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {}),
