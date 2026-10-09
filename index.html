@@ -4,51 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Class Suggestions</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script type="importmap">
-    {"imports":{"@material/web/":"https://esm.run/@material/web/"}}
-  </script>
-  <script type="module">
-    import 'https://esm.run/@material/web/all.js';
-  </script>
 </head>
 <body>
-  <header class="top-app-bar">
+  <header>
     <span class="app-title">Class Suggestions</span>
+    <button class="btn-primary" id="add-btn">+ New</button>
   </header>
+
   <div id="cookie-banner" class="cookie-banner" hidden>
-    <p>This site uses a cookie to remember your vote so you can't vote twice. No personal data is collected.</p>
+    <span>This site uses a cookie so you can't vote twice. No personal data is collected.</span>
     <div class="cookie-actions">
-      <md-filled-button id="cookie-accept">Accept</md-filled-button>
-      <md-outlined-button id="cookie-decline">Decline</md-outlined-button>
+      <button class="btn-primary btn-sm" id="cookie-accept">Accept</button>
+      <button class="btn-ghost btn-sm" id="cookie-decline">Decline</button>
     </div>
   </div>
+
   <main>
     <section id="pinned-section" hidden>
-      <h2 class="section-label">Pinned</h2>
+      <p class="section-label">Pinned</p>
       <div id="pinned-list"></div>
     </section>
-    <section>
-      <div id="suggestions-list"><p class="loading-msg">Loading suggestions…</p></div>
-    </section>
+    <div id="suggestions-list"><p class="loading-msg">Loading…</p></div>
   </main>
-  <md-fab id="add-fab" label="Add suggestion" extended>
-    <md-icon slot="icon">add</md-icon>
-  </md-fab>
-  <md-dialog id="submit-dialog">
-    <div slot="headline">New suggestion</div>
-    <form slot="content" id="submit-form" method="dialog">
-      <md-outlined-text-field id="title-field" label="Title" required maxlength="120" style="width:100%"></md-outlined-text-field>
-      <md-outlined-text-field id="desc-field" label="Description (optional)" type="textarea" rows="3" maxlength="500" style="width:100%;margin-top:16px"></md-outlined-text-field>
-    </form>
-    <div slot="actions">
-      <md-text-button id="cancel-btn">Cancel</md-text-button>
-      <md-filled-button id="submit-btn">Submit</md-filled-button>
+
+  <dialog id="submit-dialog">
+    <div class="dialog-header">New suggestion</div>
+    <div class="dialog-body">
+      <div class="field">
+        <label for="title-field">Title</label>
+        <input id="title-field" type="text" maxlength="120" placeholder="What's your idea?">
+        <span class="char-count"><span id="title-count">0</span> / 120</span>
+      </div>
+      <div class="field">
+        <label for="desc-field">Description <span class="optional">(optional)</span></label>
+        <textarea id="desc-field" maxlength="500" placeholder="More details…" rows="3"></textarea>
+        <span class="char-count"><span id="desc-count">0</span> / 500</span>
+      </div>
     </div>
-  </md-dialog>
+    <div class="dialog-footer">
+      <button class="btn-ghost" id="cancel-btn">Cancel</button>
+      <button class="btn-primary" id="submit-btn">Submit</button>
+    </div>
+  </dialog>
+
   <script src="js/config.js"></script>
   <script src="js/github.js"></script>
   <script src="js/voter.js"></script>

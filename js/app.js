@@ -1,8 +1,6 @@
 (function () {
-  // Shared page state
   window._appState = { issues: [], votes: null, voteSha: null, voterHash: null };
 
-  // Build one suggestion card element (student view)
   function buildCard(issue, votes, voterHash, votingOpen) {
     const issueVotes = votes.issues[String(issue.number)] || { count: 0, voters: [] };
     const hasVoted = issueVotes.voters.includes(voterHash);
@@ -22,7 +20,6 @@
       const body = document.createElement('div');
       body.className = 'card-body';
       body.textContent = issue.body;
-      // Expand on click if truncated
       body.addEventListener('click', () => body.classList.toggle('expanded'));
       card.appendChild(body);
     }
@@ -35,15 +32,13 @@
     if (isChosen) {
       const chip = document.createElement('span');
       chip.className = 'chosen-chip';
-      chip.innerHTML = '&#10003; Chosen';
+      chip.textContent = '✓ Chosen';
       chips.appendChild(chip);
     }
     footer.appendChild(chips);
 
     const voteWrap = document.createElement('div');
-    voteWrap.style.display = 'flex';
-    voteWrap.style.alignItems = 'center';
-    voteWrap.style.gap = '8px';
+    voteWrap.className = 'vote-wrap';
 
     const countEl = document.createElement('span');
     countEl.className = 'vote-count';
@@ -51,21 +46,24 @@
     voteWrap.appendChild(countEl);
 
     if (!votingOpen) {
-      const closed = document.createElement('md-outlined-button');
-      closed.disabled = true;
-      closed.textContent = 'Voting closed';
-      voteWrap.appendChild(closed);
+      const btn = document.createElement('button');
+      btn.className = 'closed-btn';
+      btn.disabled = true;
+      btn.textContent = 'Voting closed';
+      voteWrap.appendChild(btn);
     } else if (hasVoted) {
-      const votedBtn = document.createElement('md-filled-tonal-button');
-      votedBtn.disabled = true;
-      votedBtn.textContent = 'Voted ✓';
-      voteWrap.appendChild(votedBtn);
+      const btn = document.createElement('button');
+      btn.className = 'voted-btn';
+      btn.disabled = true;
+      btn.textContent = '✓ Voted';
+      voteWrap.appendChild(btn);
     } else {
-      const voteBtn = document.createElement('md-filled-tonal-button');
-      voteBtn.dataset.action = 'vote';
-      voteBtn.dataset.number = issue.number;
-      voteBtn.innerHTML = '<md-icon slot="icon">thumb_up</md-icon>Vote';
-      voteWrap.appendChild(voteBtn);
+      const btn = document.createElement('button');
+      btn.className = 'vote-btn';
+      btn.dataset.action = 'vote';
+      btn.dataset.number = issue.number;
+      btn.innerHTML = '↑ Vote';
+      voteWrap.appendChild(btn);
     }
 
     footer.appendChild(voteWrap);
@@ -84,12 +82,8 @@
     pinnedList.innerHTML = '';
     sugList.innerHTML = '';
 
-    if (pinned.length) {
-      pinnedSection.hidden = false;
-      pinned.forEach(i => pinnedList.appendChild(buildCard(i, votesData, voterHash, votesData.votingOpen)));
-    } else {
-      pinnedSection.hidden = true;
-    }
+    pinnedSection.hidden = pinned.length === 0;
+    pinned.forEach(i => pinnedList.appendChild(buildCard(i, votesData, voterHash, votesData.votingOpen)));
 
     if (regular.length === 0) {
       sugList.innerHTML = '<p class="loading-msg">No suggestions yet — be the first!</p>';
@@ -100,34 +94,35 @@
 
   async function init() {
     Voter.init();
-
     const [issues, { sha, content: votes }, voterHash] = await Promise.all([
       GH.fetchIssues(),
       GH.fetchVotesFile(),
       Voter.getHashedId(),
     ]);
-
     window._appState = { issues, votes, voteSha: sha, voterHash };
     renderSuggestions(issues, votes, voterHash);
   }
 
-  // ── Submit dialog ──
   document.addEventListener('DOMContentLoaded', () => {
     init().catch(err => {
       document.getElementById('suggestions-list').innerHTML =
-        `<p class="loading-msg">Could not load suggestions. Check your config.js setup.</p>`;
+        '<p class="loading-msg">Could not load suggestions.</p>';
       console.error(err);
     });
 
-    const fab = document.getElementById('add-fab');
     const dialog = document.getElementById('submit-dialog');
     const submitBtn = document.getElementById('submit-btn');
     const cancelBtn = document.getElementById('cancel-btn');
     const titleField = document.getElementById('title-field');
     const descField = document.getElementById('desc-field');
+    const titleCount = document.getElementById('title-count');
+    const descCount = document.getElementById('desc-count');
 
-    fab?.addEventListener('click', () => dialog.show());
+    document.getElementById('add-btn')?.addEventListener('click', () => dialog.showModal());
     cancelBtn?.addEventListener('click', () => dialog.close());
+
+    titleField?.addEventListener('input', () => { titleCount.textContent = titleField.value.length; });
+    descField?.addEventListener('input', () => { descCount.textContent = descField.value.length; });
 
     submitBtn?.addEventListener('click', async () => {
       const title = titleField.value.trim();
@@ -135,14 +130,14 @@
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Submitting…';
-
       try {
         await GH.createIssue(title, descField.value.trim(), ['suggestion']);
         dialog.close();
         titleField.value = '';
         descField.value = '';
+        titleCount.textContent = '0';
+        descCount.textContent = '0';
 
-        // Refresh issues + re-render
         const [issues, { sha, content: votes }] = await Promise.all([
           GH.fetchIssues(),
           GH.fetchVotesFile(),
@@ -151,7 +146,7 @@
         renderSuggestions(issues, votes, window._appState.voterHash);
       } catch (err) {
         console.error(err);
-        alert('Could not submit suggestion. Please try again.');
+        alert('Could not submit. Please try again.');
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit';
@@ -159,23 +154,19 @@
     });
   });
 
-  // ── Vote handler (delegated to document) ──
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-action="vote"]');
     if (!btn) return;
 
     const number = String(btn.dataset.number);
-    const { votes, voteSha, voterHash } = window._appState;
-
-    // Prevent double-click
+    const { voterHash } = window._appState;
     btn.disabled = true;
 
     try {
       const { sha: freshSha, content: freshVotes } = await GH.fetchVotesFile();
-
       const entry = freshVotes.issues[number] || { count: 0, voters: [] };
+
       if (entry.voters.includes(voterHash)) {
-        // Already voted (race condition guard)
         window._appState.votes = freshVotes;
         window._appState.voteSha = freshSha;
         renderSuggestions(window._appState.issues, freshVotes, voterHash);
@@ -185,7 +176,6 @@
       entry.count += 1;
       entry.voters = [...entry.voters, voterHash];
       freshVotes.issues[number] = entry;
-
       await GH.updateVotesFile(freshVotes, freshSha);
 
       window._appState.votes = freshVotes;
@@ -197,5 +187,4 @@
       alert('Could not save vote. Please try again.');
     }
   });
-
 })();

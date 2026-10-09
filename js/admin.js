@@ -20,29 +20,28 @@
     } else {
       errorEl.hidden = false;
       field.value = '';
-      // Shake the dialog
+      field.focus();
       const dialogEl = document.getElementById('auth-dialog');
       dialogEl.classList.remove('shake');
-      void dialogEl.offsetWidth; // reflow to restart animation
+      void dialogEl.offsetWidth;
       dialogEl.classList.add('shake');
     }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
     Voter.init();
+    const authDialog = document.getElementById('auth-dialog');
 
-    // Auto-login if session still active
     if (sessionStorage.getItem('admin_authed') === '1') {
       window._adminAuthed = true;
-      document.getElementById('auth-dialog').close();
       if (typeof window._loadAdmin === 'function') window._loadAdmin();
-      return;
+    } else {
+      authDialog.showModal();
+      document.getElementById('login-btn')?.addEventListener('click', attemptLogin);
+      document.getElementById('password-field')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') attemptLogin();
+      });
     }
-
-    document.getElementById('login-btn')?.addEventListener('click', attemptLogin);
-    document.getElementById('password-field')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') attemptLogin();
-    });
   });
 
   function buildAdminCard(issue, votes) {
@@ -75,7 +74,7 @@
     if (isChosen) {
       const chip = document.createElement('span');
       chip.className = 'chosen-chip';
-      chip.innerHTML = '&#10003; Chosen';
+      chip.textContent = '✓ Chosen';
       chips.appendChild(chip);
     }
     const voteCount = document.createElement('span');
@@ -87,47 +86,44 @@
     const actions = document.createElement('div');
     actions.className = 'admin-actions';
 
-    // Pin / Unpin
-    const pinBtn = document.createElement('md-icon-button');
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'admin-btn' + (isPinned ? ' active' : '');
     pinBtn.title = isPinned ? 'Unpin' : 'Pin';
-    pinBtn.innerHTML = `<md-icon>${isPinned ? 'push_pin' : 'push_pin'}</md-icon>`;
-    pinBtn.style.color = isPinned ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-on-surface-variant)';
+    pinBtn.textContent = isPinned ? '📌 Pinned' : 'Pin';
     pinBtn.addEventListener('click', async () => {
       pinBtn.disabled = true;
       try {
         if (isPinned) await GH.removeLabel(issue.number, 'pinned');
         else await GH.addLabel(issue.number, 'pinned');
-        await _loadAdmin();
+        await window._loadAdmin();
       } catch (e) { console.error(e); pinBtn.disabled = false; }
     });
     actions.appendChild(pinBtn);
 
-    // Chosen / Unchosen
-    const chosenBtn = document.createElement('md-icon-button');
+    const chosenBtn = document.createElement('button');
+    chosenBtn.className = 'admin-btn' + (isChosen ? ' active' : '');
     chosenBtn.title = isChosen ? 'Unmark as chosen' : 'Mark as chosen';
-    chosenBtn.innerHTML = `<md-icon>check_circle</md-icon>`;
-    chosenBtn.style.color = isChosen ? '#14AE5C' : 'var(--md-sys-color-on-surface-variant)';
+    chosenBtn.textContent = isChosen ? '✓ Chosen' : 'Choose';
     chosenBtn.addEventListener('click', async () => {
       chosenBtn.disabled = true;
       try {
         if (isChosen) await GH.removeLabel(issue.number, 'chosen');
         else await GH.addLabel(issue.number, 'chosen');
-        await _loadAdmin();
+        await window._loadAdmin();
       } catch (e) { console.error(e); chosenBtn.disabled = false; }
     });
     actions.appendChild(chosenBtn);
 
-    // Delete (close issue)
-    const deleteBtn = document.createElement('md-icon-button');
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'admin-btn danger';
     deleteBtn.title = 'Delete suggestion';
-    deleteBtn.innerHTML = '<md-icon>delete</md-icon>';
-    deleteBtn.style.color = 'var(--md-sys-color-error)';
+    deleteBtn.textContent = 'Delete';
     deleteBtn.addEventListener('click', async () => {
-      if (!confirm(`Delete suggestion: "${issue.title}"?`)) return;
+      if (!confirm(`Delete: "${issue.title}"?`)) return;
       deleteBtn.disabled = true;
       try {
         await GH.closeIssue(issue.number);
-        await _loadAdmin();
+        await window._loadAdmin();
       } catch (e) { console.error(e); deleteBtn.disabled = false; }
     });
     actions.appendChild(deleteBtn);
@@ -148,12 +144,8 @@
     pinnedList.innerHTML = '';
     sugList.innerHTML = '';
 
-    if (pinned.length) {
-      pinnedSection.hidden = false;
-      pinned.forEach(i => pinnedList.appendChild(buildAdminCard(i, votes)));
-    } else {
-      pinnedSection.hidden = true;
-    }
+    pinnedSection.hidden = pinned.length === 0;
+    pinned.forEach(i => pinnedList.appendChild(buildAdminCard(i, votes)));
 
     if (regular.length === 0) {
       sugList.innerHTML = '<p class="loading-msg">No suggestions yet.</p>';
@@ -161,9 +153,8 @@
       regular.forEach(i => sugList.appendChild(buildAdminCard(i, votes)));
     }
 
-    // Voting toggle state
     const toggle = document.getElementById('voting-toggle');
-    if (toggle) toggle.selected = votes.votingOpen;
+    if (toggle) toggle.checked = votes.votingOpen;
   }
 
   window._loadAdmin = async function () {
@@ -179,11 +170,10 @@
     } catch (err) {
       console.error(err);
       document.getElementById('suggestions-list').innerHTML =
-        '<p class="loading-msg">Could not load. Check config.js.</p>';
+        '<p class="loading-msg">Could not load.</p>';
     }
   };
 
-  // Voting toggle handler (attached after DOM ready)
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('voting-toggle')?.addEventListener('change', async (e) => {
       if (!window._adminAuthed) return;
@@ -191,13 +181,13 @@
       toggle.disabled = true;
       try {
         const { sha, content: votes } = await GH.fetchVotesFile();
-        votes.votingOpen = toggle.selected;
+        votes.votingOpen = toggle.checked;
         await GH.updateVotesFile(votes, sha);
         window._adminVotesData = votes;
         window._adminVoteSha = sha;
       } catch (err) {
         console.error(err);
-        toggle.selected = !toggle.selected; // revert
+        toggle.checked = !toggle.checked;
       } finally {
         toggle.disabled = false;
       }
